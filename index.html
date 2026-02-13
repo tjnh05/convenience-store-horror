@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>深夜便利店守则 - 角色位置修复版</title>
+    <style>
+        body {
+            background-color: #000;
+            color: #0f0;
+            font-family: 'Courier New', monospace;
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+            overflow-x: hidden;
+            height: 100vh;
+            position: relative;
+        }
+        
+        /* 主容器 */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 15px;
+            min-height: 100vh;
+            position: relative;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #0f0;
+            text-shadow: 0 0 10px rgba(0, 255, 0, 0.7);
+            margin-bottom: 15px;
+            font-size: 24px;
+        }
+        
+        /* 状态栏 */
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            background-color: rgba(0, 26, 0, 0.9);
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #0a0;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        
+        /* 规则面板 - 优化高度和字体 */
+        .rules-panel {
+            background-color: rgba(0, 17, 0, 0.9);
+            padding: 12px;
+            margin: 10px 0;
+            border-left: 3px solid #0f0;
+            border-radius: 5px;
+            max-height: 45vh; /* 限制高度确保可见 */
+            overflow-y: auto;
+            font-size: 0.85em; /* 缩小字体确保完整显示 */
+            line-height: 1.4;
+        }
+        
+        /* 事件显示区 */
+        .event-display {
+            background-color: rgba(0, 17, 0, 0.9);
+            padding: 12px;
+            margin: 10px 0;
+            border: 1px dashed #0a0;
+            border-radius: 5px;
+            min-height: 70px;
+            font-size: 14px;
+        }
+        
+        /* 选项按钮 */
+        .option-btn {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            margin: 6px 0;
+            background-color: rgba(0, 34, 0, 0.9);
+            color: #0f0;
+            border: 1px solid #0a0;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.3s;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+        }
+        
+        .option-btn:hover {
+            background-color: rgba(0, 51, 0, 0.95);
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.5);
+            transform: translateX(5px);
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .terminal-text {
+            white-space: pre-wrap;
+            font-size: 14px;
+        }
+        
+        /* 便利店场景容器 */
+        .store-scene {
+            position: relative;
+            width: 100%;
+            height: 320px; /* 保持精简高度 */
+            background-color: #111;
+            border: 2px solid #0f0;
+            border-radius: 8px;
+            overflow: hidden;
+            margin: 15px 0;
+        }
+        
+        /* 交互元素 - 使用transform实现精确中心对齐 */
+        .interactive-element {
+            position: absolute;
+            cursor: pointer;
+            transition: all 0.3s;
+            z-index: 20;
+            transform: translateX(-50%); /* 以元素中心点对齐 */
+        }
+        
+        .interactive-element:hover {
+            filter: brightness(1.2);
+            transform: translateX(-50%) scale(1.05); /* 保持中心对齐的同时缩放 */
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            .store-scene {
+                height: 280px;
+            }
+            h1 {
+                font-size: 20px;
+            }
+            .status-bar {
+                font-size: 12px;
+            }
+            .rules-panel {
+                font-size: 0.8em;
+                max-height: 50vh;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .store-scene {
+                height: 240px;
+            }
+            .rules-panel {
+                font-size: 0.75em;
+                padding: 8px;
+            }
+            .option-btn {
+                font-size: 12px;
+                padding: 8px;
+            }
+        }
+        
+        /* 特殊效果 */
+        .glitch {
+            animation: glitch 1s infinite;
+        }
+        
+        @keyframes glitch {
+            0% { transform: translateX(-50%) translate(0, 0); }
+            20% { transform: translateX(-50%) translate(-2px, 2px); }
+            40% { transform: translateX(-50%) translate(-2px, -2px); }
+            60% { transform: translateX(-50%) translate(2px, 2px); }
+            80% { transform: translateX(-50%) translate(2px, -2px); }
+            100% { transform: translateX(-50%) translate(0, 0); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏪 深夜便利店守则 - 角色位置修复版</h1>
+        
+        <!-- 开始界面 -->
+        <div id="startScreen">
+            <p class="terminal-text">
+星光便利店夜班员工守则
+
+欢迎加入星光便利店！作为新入职的夜班员工，
+你必须严格遵守以下守则。最近发生了多起员工失踪事件，
+店长希望你能平安度过试用期。
+
+游戏规则：
+• 时间从12:00 AM到6:00 AM
+• 每小时会遇到一个事件
+• 你的选择会影响违规次数和理智值
+• 违规过多或理智值过低会导致不同结局
+
+准备好了吗？点击下面开始你的夜班...
+            </p>
+            <button id="startBtn" class="option-btn">开始夜班</button>
+        </div>
+
+        <!-- 游戏界面 -->
+        <div id="gameScreen" class="hidden">
+            <div class="status-bar">
+                <div>当前时间: <span id="currentTime">12:00 AM</span></div>
+                <div>违规次数: <span id="violations">0</span></div>
+                <div>理智值: <span id="sanity">100</span>%</div>
+            </div>
+            
+            <div class="rules-panel">
+                <h3 style="margin-top: 0; margin-bottom: 8px; font-size: 1.1em;">📜 夜班员工守则</h3>
+                <ol style="padding-left: 20px; margin: 0;">
+                    <li>必须在11:55 PM前到达，12:00 AM准时开门。如果12:00时店内还有其他员工，请立即离开。</li>
+                    <li>穿黑色雨衣且没打伞的顾客，不要与其眼神接触。</li>
+                    <li>货架上出现红色包装糖果，请放入储物间黑色箱子。</li>
+                    <li>洗手间镜子中人影动作不同步，请关闭洗手间并贴"维修中"告示。</li>
+                    <li>监控中出现白衣服小女孩是正常的，但现实中看到请躲进储物间。</li>
+                    <li>清洁工老太太5:30出现，如果提前出现说明时间有问题。</li>
+                    <li>听到收银机自动打印小票但无顾客，拨打座机重拨键。</li>
+                    <li>记不清某段时间发生什么，说明你做得很好。</li>
+                    <li>凌晨3:00后不要看窗外，无论听到什么声音。</li>
+                    <li>早上6:00准时关门，不要拖延。</li>
+                </ol>
+            </div>
+            
+            <!-- 便利店高保真场景 -->
+            <div class="store-scene" id="storeScene">
+                <!-- 背景 - 便利店内部结构 -->
+                <svg width="100%" height="100%" viewBox="0 0 1200 400" xmlns="http://www.w3.org/2000/svg">
+                    <!-- 地板 -->
+                    <rect x="0" y="280" width="1200" height="120" fill="#333" />
+                    
+                    <!-- 墙壁 -->
+                    <rect x="0" y="0" width="1200" height="280" fill="#222" />
+                    
+                    <!-- 天花板灯（与货架中线对齐） -->
+                    <rect x="100" y="20" width="1000" height="30" fill="#444" rx="5" />
+                    <circle cx="200" cy="35" r="15" fill="#ff0" opacity="0.7" />
+                    <circle cx="410" cy="35" r="15" fill="#ff0" opacity="0.7" />
+                    <circle cx="610" cy="35" r="15" fill="#ff0" opacity="0.7" />
+                    <circle cx="810" cy="35" r="15" fill="#ff0" opacity="0.7" />
+                    <circle cx="1000" cy="35" r="15" fill="#ff0" opacity="0.7" />
+                    
+                    <!-- 入口（往左水平移动，右侧边线与灯条左侧对齐） -->
+                    <rect x="20" y="200" width="80" height="200" fill="#555" rx="5" />
+                    <rect x="25" y="205" width="70" height="190" fill="#aaa" opacity="0.4" rx="3" />
+                    <text x="60" y="190" text-anchor="middle" fill="#0f0" font-family="monospace" font-size="12">入口</text>
+                    
+                    <!-- 收银台（相应左移，避免与入口重叠） -->
+                    <rect x="120" y="200" width="125" height="75" fill="#444" rx="5" />
+                    <rect x="130" y="210" width="50" height="40" fill="#333" rx="3" />
+                    <rect x="190" y="210" width="40" height="15" fill="#222" rx="2" />
+                    <text x="155" y="208" text-anchor="middle" fill="#0f0" font-family="monospace" font-size="8">显示器</text>
+                    <text x="210" y="208" text-anchor="middle" fill="#0f0" font-family="monospace" font-size="8">按键</text>
+                    <text x="182" y="195" text-anchor="middle" fill="#0f0" font-family="monospace" font-size="10">收银台</text>
+                    
+                    <!-- 货架1（饮料货架） -->
+                    <rect x="320" y="140" width="180" height="130" fill="#555" rx="5" />
+                    <rect x="330" y="155" width="160" height="20" fill="#666" />
+                    <rect x="330" y="185" width="160" height="20" fill="#666" />
+                    <rect x="330" y="215" width="160" height="20" fill="#666" />
+                    <text x="410" y="130" text-anchor="middle" fill="#0f0" font-family="monospace" font-size="12">饮料货架</text>
+                    
+                    <!-- 货架2（零食货架） -->
+                    <rect x="520" y="140" width="180" height="130" fill="#555" rx="5" />
+                    <rect x="530" y="155" width="160" height="20" fill="#666" />
+                    <rect x="530" y="185" width="160" height="20" fill="#666" />
+                    <rect x="530" y="215" width="160" height="20" fill="#666" />
+                    <text x="610" y="130" text-anchor="middle" fill="#0f0" font-family="monospace" font-size="12">零食货架</text>
+                    
+                    <!-- 货架3（日用品货架） -->
+                    <rect x="720" y="140" width="180" height="130" fill="#555" rx="5" />
+                    <rect x="730" y="155" width="160" height="20" fill="#666" />
+                    <rect x="730" y="185" width="160" height="20" fill="#666" />
+                    <rect x="730" y="215" width="160" height="20" fill="#666" />
+                    <text x="810" y="130" text-anchor="middle" fill="#0f0" font-family="monospace" font-size="12">日用品货架</text>
+                    
+                    <!-- 洗手间（高度调小，与货架对齐） -->
+                    <rect x="1010" y="140" width="90" height="65" fill="#444" rx="8" />
+                    <text x="1055" y="172" text-anchor="middle" fill="#fff" font-family="monospace" font-size="18" font-weight="bold">🚻</text>
+                    <text x="1055" y="195" text-anchor="middle" fill="#0f0" font-family="monospace" font-size="10">洗手间</text>
+                    
+                    <!-- 储物间（高度调小，与货架对齐） -->
+                    <rect x="1010" y="205" width="90" height="65" fill="#444" rx="8" />
+                    <text x="1055" y="237" text-anchor="middle" fill="#fff" font-family="monospace" font-size="18" font-weight="bold">📦</text>
+                    <text x="1055" y="260" text-anchor="middle" fill="#0f0" font-family="monospace" font-size="10">储物间</text>
+                    
+                    <!-- 窗户（移到储物间下方，与储物间等宽） -->
+                    <rect x="1010" y="280" width="90" height="70" fill="#aaa" opacity="0.3" rx="5" />
+                    <rect x="1010" y="280" width="90" height="70" fill="none" stroke="#666" stroke-width="2" rx="5" />
+                    <text x="1055" y="315" text-anchor="middle" fill="#0f0" font-family="monospace" font-size="12">窗户</text>
+                </svg>
+                
+                <!-- 黑雨衣顾客（与零食货柜居中对齐） -->
+                <div class="interactive-element" id="raincoatCustomer" style="top: 180px; left: 610px; width: 70px; height: 130px;">
+                    <svg width="70" height="130" viewBox="0 0 70 130" xmlns="http://www.w3.org/2000/svg">
+                        <!-- 雨衣帽子 -->
+                        <path d="M18,10 Q35,0 52,10 L48,25 Q35,22 22,25 Z" fill="#000" />
+                        <!-- 雨衣身体 -->
+                        <path d="M13,25 Q8,70 18,120 Q35,130 52,120 Q62,70 57,25 Z" fill="#000" />
+                        <!-- 反光条 -->
+                        <rect x="22" y="50" width="26" height="4" fill="#ff0" opacity="0.6" />
+                        <rect x="22" y="80" width="26" height="4" fill="#ff0" opacity="0.6" />
+                        <!-- 隐藏的面部 -->
+                        <circle cx="35" cy="18" r="7" fill="#111" opacity="0.8" />
+                    </svg>
+                </div>
+                
+                <!-- 白衣服小女孩（与饮料货柜居中对齐，辫子改为黑色） -->
+                <div class="interactive-element" id="whiteGirl" style="top: 190px; left: 410px; width: 55px; height="110px;">
+                    <svg width="55" height="110" viewBox="0 0 55 110" xmlns="http://www.w3.org/2000/svg">
+                        <!-- 脸部 -->
+                        <circle cx="28" cy="28" r="13" fill="#fff" />
+                        <!-- 眼睛 -->
+                        <circle cx="21" cy="26" r="2.5" fill="#000" />
+                        <circle cx="37" cy="26" r="2.5" fill="#000" />
+                        <!-- 嘴巴 -->
+                        <path d="M23,35 Q28,38 33,35" stroke="#000" stroke-width="1.5" fill="none" />
+                        <!-- 左侧小辫子（黑色） -->
+                        <path d="M15,30 Q5,35 8,45" stroke="#000" stroke-width="3" fill="none" />
+                        <circle cx="8" cy="45" r="3" fill="#000" />
+                        <!-- 右侧小辫子（黑色） -->
+                        <path d="M41,30 Q51,35 48,45" stroke="#000" stroke-width="3" fill="none" />
+                        <circle cx="48" cy="45" r="3" fill="#000" />
+                        <!-- 连衣裙 -->
+                        <path d="M14,40 Q28,70 42,40 L42,85 Q28,100 14,85 Z" fill="#fff" />
+                        <!-- 腿 -->
+                        <rect x="18" y="85" width="7" height="18" fill="#fff" rx="2" />
+                        <rect x="30" y="85" width="7" height="18" fill="#fff" rx="2" />
+                    </svg>
+                </div>
+                
+                <!-- 门外清洁工老太太和推车（白色短发，位置调整到画面内） -->
+                <div class="interactive-element" id="cleanerOutside" style="top: 190px; left: 60px; width: 90px; height="130px;">
+                    <svg width="90" height="130" viewBox="0 0 90 130" xmlns="http://www.w3.org/2000/svg">
+                        <!-- 推车 -->
+                        <rect x="9" y="70" width="72" height="45" fill="#666" rx="4" />
+                        <rect x="14" y="75" width="63" height="36" fill="#555" rx="3" />
+                        <rect x="5" y="55" width="9" height="18" fill="#777" />
+                        <rect x="76" y="55" width="9" height="18" fill="#777" />
+                        <!-- 轮子 -->
+                        <circle cx="18" cy="125" r="7" fill="#333" />
+                        <circle cx="72" cy="125" r="7" fill="#333" />
+                        <!-- 老太太头部 -->
+                        <circle cx="45" cy="35" r="13" fill="#ddd" />
+                        <!-- 白色短发 -->
+                        <path d="M35,25 Q45,15 55,25 Q52,30 45,32 Q38,30 35,25 Z" fill="#fff" />
+                        <!-- 眼睛 -->
+                        <circle cx="39" cy="34" r="1.8" fill="#000" />
+                        <circle cx="51" cy="34" r="1.8" fill="#000" />
+                        <!-- 身体 -->
+                        <rect x="32" y="49" width="27" height="36" fill="#999" rx="4" />
+                        <!-- 手臂 -->
+                        <rect x="23" y="54" width="9" height="13" fill="#ddd" rx="2" />
+                        <rect x="58" y="54" width="9" height="13" fill="#ddd" rx="2" />
+                        <!-- 清洁工具 -->
+                        <rect x="63" y="63" width="4.5" height="18" fill="#bb0" />
+                        <circle cx="65" cy="85" r="4.5" fill="#bb0" />
+                    </svg>
+                </div>
+            </div>
+            
+            <div class="event-display">
+                <h3 style="margin-top: 0; margin-bottom: 8px; font-size: 1.1em;">🚨 当前事件</h3>
+                <p id="currentEvent">正在加载...</p>
+            </div>
+            
+            <div class="options" id="optionsContainer">
+                <!-- 选项将在这里动态生成 -->
+            </div>
+        </div>
+
+        <!-- 结局界面 -->
+        <div id="endScreen" class="hidden">
+            <h2 id="outcomeTitle">结局标题</h2>
+            <p id="outcomeText" class="terminal-text">结局内容...</p>
+            <button id="restartBtn" class="option-btn">重新开始</button>
+        </div>
+    </div>
+
+    <script>
+        // 游戏状态
+        const gameState = {
+            currentTime: 0, // 0 = 12AM, 1 = 1AM, ..., 6 = 6AM
+            violations: 0,
+            sanity: 100,
+            gameOver: false,
+            eventsEncountered: new Set()
+        };
+
+        // 所有事件定义
+        const events = [
+            {
+                id: 'normal',
+                title: '平静的夜晚',
+                description: '今晚似乎很平静。只有一位普通顾客买了些零食，一切正常。',
+                options: [
+                    { text: '继续保持警惕', violation: false, sanityChange: 0 },
+                    { text: '放松一下，看看手机', violation: true, sanityChange: -5 }
+                ]
+            },
+            {
+                id: 'raincoat',
+                title: '黑雨衣顾客',
+                description: '一位穿着黑色雨衣的顾客走进店里，但他没有打伞。他站在饮料区，似乎在观察你。',
+                options: [
+                    { text: '避免眼神接触，快速完成交易', violation: false, sanityChange: -5 },
+                    { text: '友好地问问他需要什么帮助', violation: true, sanityChange: -15 },
+                    { text: '假装没看见，继续整理货架', violation: true, sanityChange: -10 }
+                ]
+            },
+            {
+                id: 'red_candy',
+                title: '神秘的红色糖果',
+                description: '你在补货时发现货架上多了一包红色包装的糖果，包装上没有任何标签。这不在今天的进货清单上。',
+                options: [
+                    { text: '按照守则，放入储物间黑色箱子', violation: false, sanityChange: -5 },
+                    { text: '尝一颗看看是什么味道', violation: true, sanityChange: -20 },
+                    { text: '拍照发给店长询问', violation: true, sanityChange: -10 }
+                ]
+            },
+            {
+                id: 'mirror',
+                title: '洗手间的镜子',
+                description: '你去检查洗手间，发现镜子中的自己动作有些延迟。当你举起右手时，镜中的你却举起了左手。',
+                options: [
+                    { text: '立即关闭洗手间，贴上"维修中"告示', violation: false, sanityChange: -10 },
+                    { text: '仔细观察镜中的自己，试图找出原因', violation: true, sanityChange: -25 },
+                    { text: '用清洁剂擦擦镜子，可能是污渍', violation: true, sanityChange: -15 }
+                ]
+            },
+            {
+                id: 'white_girl_monitor',
+                title: '监控中的小女孩',
+                description: '你在监控屏幕上看到一个穿白色衣服的小女孩在零食区徘徊。根据守则，这是正常现象。',
+                options: [
+                    { text: '当作没看见，继续工作', violation: false, sanityChange: -5 },
+                    { text: '去零食区确认是否真的有人', violation: true, sanityChange: -20 },
+                    { text: '调整监控角度，看得更清楚些', violation: false, sanityChange: -10 }
+                ]
+            },
+            {
+                id: 'white_girl_reality',
+                title: '现实中的小女孩',
+                description: '你在整理货架时，突然看到一个穿白色衣服的小女孩站在冷饮柜旁。她背对着你，一动不动。',
+                options: [
+                    { text: '立即躲进储物间并锁好门', violation: false, sanityChange: -15 },
+                    { text: '走过去问问她需要什么帮助', violation: true, sanityChange: -30 },
+                    { text: '大声喊叫，试图吓跑她', violation: true, sanityChange: -25 }
+                ]
+            },
+            {
+                id: 'early_cleaner',
+                title: '提前出现的清洁工',
+                description: '现在才凌晨3点，但清洁工老太太已经推着清洁车出现在门口。她透过玻璃门盯着你看。',
+                options: [
+                    { text: '按照守则，这说明时间有问题，躲进储物间', violation: false, sanityChange: -10 },
+                    { text: '开门让她进来工作', violation: true, sanityChange: -20 },
+                    { text: '打电话给店长报告异常', violation: true, sanityChange: -15 }
+                ]
+            },
+            {
+                id: 'printer',
+                title: '自动打印的小票',
+                description: '收银机突然自动开始打印小票，但店里没有任何顾客。小票上只有一串乱码。',
+                options: [
+                    { text: '拨打座机重拨键（紧急程序）', violation: false, sanityChange: -10 },
+                    { text: '拔掉收银机电源', violation: true, sanityChange: -15 },
+                    { text: '把小票收起来，当作没发生', violation: true, sanityChange: -20 }
+                ]
+            },
+            {
+                id: 'window',
+                title: '窗外的声音',
+                description: '凌晨3:30，你听到窗外传来敲击玻璃的声音。守则第9条明确说不要看窗外。',
+                options: [
+                    { text: '严格遵守守则，低头继续工作', violation: false, sanityChange: -5 },
+                    { text: '偷偷瞄一眼窗外是什么', violation: true, sanityChange: -25 },
+                    { text: '拉上所有窗帘，完全遮挡窗户', violation: false, sanityChange: -10 }
+                ]
+            },
+            {
+                id: 'memory_loss',
+                title: '记忆空白',
+                description: '你突然意识到自己不记得过去半小时发生了什么。收银台上的物品位置也变了，但你不记得动过它们。',
+                options: [
+                    { text: '根据守则，这说明你做得很好，继续保持', violation: false, sanityChange: 5 },
+                    { text: '恐慌地检查监控录像', violation: true, sanityChange: -15 },
+                    { text: '给自己倒杯咖啡，试图清醒一下', violation: false, sanityChange: -5 }
+                ]
+            }
+        ];
+
+        // 结局定义
+        const outcomes = [
+            {
+                condition: (state) => state.violations === 0 && state.sanity >= 80,
+                title: '✅ 完美结局：真相',
+                text: '清晨6:00，阳光照进便利店。店长出现并告诉你，你是第一个成功完成试用期的员工。\n\n原来这家店是专门测试人类在超自然环境下的应对能力，目的是寻找能够维护现实稳定性的特殊人才。\n\n你获得了正式工作合同，并发现自己能看见常人看不到的异常现象。'
+            },
+            {
+                condition: (state) => state.violations <= 2 && state.sanity >= 50,
+                title: '👍 普通结局：幸存者',
+                text: '你成功熬到了早上6:00，虽然过程中犯了一些小错误，但总体还算顺利。\n\n店长对你表现基本满意，给了你转正的机会。不过你总觉得这家店有些不对劲，但又说不上来哪里有问题。\n\n也许这就是普通夜班员工的日常吧...'
+            },
+            {
+                condition: (state) => state.sanity > 0 && state.sanity < 50,
+                title: '⚠️ 勉强存活：精神创伤',
+                text: '你活到了天亮，但精神状态已经大不如前。你的眼神变得空洞，经常自言自语。\n\n店长还是让你通过了试用期，但你发现自己开始对某些规则产生执念。\n\n每当夜深人静，你总觉得那个穿白衣服的小女孩还在某个角落看着你...'
+            },
+            {
+                condition: (state) => state.sanity <= 0,
+                title: '💀 疯狂结局：现实崩溃',
+                text: '你的理智彻底崩溃了。时间和空间在你眼中开始扭曲，便利店的墙壁不断变换形状。\n\n你看到无数个自己在不同的时间点重复着相同的选择，但每个选择都导向更深的绝望。\n\n最终，你成为了便利店的一部分，永远困在这个时空裂缝中...'
+            },
+            {
+                condition: (state) => state.violations >= 3,
+                title: '👁️ 违规过多：被同化',
+                text: '你违反了太多规则，便利店的异常开始影响你的本质。\n\n第二天晚上，新来的员工看到你穿着黑雨衣站在货架旁，眼神空洞。\n\n你成为了便利店新的"常客A"，永远重复着这个循环，等待下一个夜班员工的到来...'
+            }
+        ];
+
+        // DOM元素
+        const startScreen = document.getElementById('startScreen');
+        const gameScreen = document.getElementById('gameScreen');
+        const endScreen = document.getElementById('endScreen');
+        const startBtn = document.getElementById('startBtn');
+        const restartBtn = document.getElementById('restartBtn');
+        const currentTimeEl = document.getElementById('currentTime');
+        const violationsEl = document.getElementById('violations');
+        const sanityEl = document.getElementById('sanity');
+        const currentEventEl = document.getElementById('currentEvent');
+        const optionsContainer = document.getElementById('optionsContainer');
+        const storeScene = document.getElementById('storeScene');
+
+        // 交互元素
+        const raincoatCustomer = document.getElementById('raincoatCustomer');
+        const whiteGirl = document.getElementById('whiteGirl');
+        const cleanerOutside = document.getElementById('cleanerOutside');
+
+        // 格式化时间显示
+        function formatTime(hour) {
+            if (hour === 0) return '12:00 AM';
+            if (hour < 6) return `${hour}:00 AM`;
+            return '6:00 AM';
+        }
+
+        // 获取随机事件
+        function getRandomEvent() {
+            // 根据当前时间过滤可用事件
+            const availableEvents = events.filter(event => {
+                switch(event.id) {
+                    case 'raincoat':
+                    case 'printer':
+                        return gameState.currentTime >= 0 && gameState.currentTime <= 5;
+                    case 'red_candy':
+                        return gameState.currentTime >= 1 && gameState.currentTime <= 4;
+                    case 'mirror':
+                    case 'early_cleaner':
+                        return gameState.currentTime >= 2 && gameState.currentTime <= 5;
+                    case 'white_girl_monitor':
+                    case 'white_girl_reality':
+                    case 'window':
+                        return gameState.currentTime >= 3 && gameState.currentTime <= 5;
+                    case 'memory_loss':
+                        return gameState.currentTime >= 4 && gameState.currentTime <= 5;
+                    default:
+                        return true;
+                }
+            });
+            
+            // 避免重复事件
+            const newEvents = availableEvents.filter(event => !gameState.eventsEncountered.has(event.id));
+            const eventPool = newEvents.length > 0 ? newEvents : availableEvents;
+            
+            const randomEvent = eventPool[Math.floor(Math.random() * eventPool.length)];
+            gameState.eventsEncountered.add(randomEvent.id);
+            return randomEvent;
+        }
+
+        // 更新UI
+        function updateUI() {
+            currentTimeEl.textContent = formatTime(gameState.currentTime);
+            violationsEl.textContent = gameState.violations;
+            sanityEl.textContent = Math.max(0, gameState.sanity);
+        }
+
+        // 显示事件
+        function showEvent(event) {
+            currentEventEl.innerHTML = `<strong>${event.title}</strong><br><br>${event.description}`;
+            optionsContainer.innerHTML = '';
+            
+            event.options.forEach(option => {
+                const button = document.createElement('button');
+                button.className = 'option-btn';
+                button.textContent = option.text;
+                button.onclick = () => handleOption(option);
+                optionsContainer.appendChild(button);
+            });
+        }
+
+        // 处理选项选择
+        function handleOption(option) {
+            // 更新违规次数和理智值
+            if (option.violation) {
+                gameState.violations++;
+            }
+            gameState.sanity += option.sanityChange;
+            gameState.sanity = Math.max(0, Math.min(100, gameState.sanity));
+            
+            // 推进时间
+            gameState.currentTime++;
+            
+            // 更新UI
+            updateUI();
+            
+            // 检查是否游戏结束
+            if (gameState.currentTime >= 6 || gameState.sanity <= 0) {
+                showOutcome();
+            } else {
+                // 显示下一个事件
+                const nextEvent = getRandomEvent();
+                showEvent(nextEvent);
+            }
+        }
+
+        // 显示结局
+        function showOutcome() {
+            const outcome = outcomes.find(o => o.condition(gameState)) || outcomes[1];
+            
+            document.getElementById('outcomeTitle').textContent = outcome.title;
+            document.getElementById('outcomeText').textContent = outcome.text;
+            
+            gameScreen.classList.add('hidden');
+            endScreen.classList.remove('hidden');
+        }
+
+        // 初始化游戏
+        function initGame() {
+            gameState.currentTime = 0;
+            gameState.violations = 0;
+            gameState.sanity = 100;
+            gameState.gameOver = false;
+            gameState.eventsEncountered.clear();
+            
+            startScreen.classList.add('hidden');
+            gameScreen.classList.remove('hidden');
+            endScreen.classList.add('hidden');
+            
+            updateUI();
+            
+            // 显示第一个事件
+            const firstEvent = getRandomEvent();
+            showEvent(firstEvent);
+            
+            // 设置交互元素点击事件
+            raincoatCustomer.onclick = () => {
+                if (gameState.currentTime >= 0 && gameState.currentTime <= 5) {
+                    showEvent(events.find(e => e.id === 'raincoat'));
+                }
+            };
+            
+            whiteGirl.onclick = () => {
+                if (gameState.currentTime >= 3 && gameState.currentTime <= 5) {
+                    showEvent(events.find(e => e.id === 'white_girl_reality'));
+                }
+            };
+            
+            cleanerOutside.onclick = () => {
+                if (gameState.currentTime >= 2 && gameState.currentTime <= 5) {
+                    showEvent(events.find(e => e.id === 'early_cleaner'));
+                }
+            };
+        }
+
+        // 事件监听器
+        startBtn.addEventListener('click', initGame);
+        restartBtn.addEventListener('click', initGame);
+
+        // 初始状态
+        updateUI();
+    </script>
+</body>
+</html>
